@@ -50,18 +50,49 @@ def find():
     cursor = connection.cursor()
     try:
         cursor.execute("SELECT * FROM USERS WHERE DOCUMENT="+dni.get())
-        usuarioRecuperado = cursor.fetchall()
-        print(usuarioRecuperado)
-        for usuario in usuarioRecuperado:
-            idUser.set(usuario[0])
-            dni.set(usuario[1])
-            name.set(usuario[2])
-            lastName.set(usuario[3])
-            direction.set(usuario[4])
-            dateBirth.set(usuario[5])
-            commentariesText.insert(1.0, usuario[6])
+        users = cursor.fetchall()
+        clean()
+        for user in users:
+            idUser.set(user[0])
+            dni.set(user[1])
+            name.set(user[2])
+            lastName.set(user[3])
+            direction.set(user[4])
+            dateBirth.set(user[5])
+            commentariesText.insert(1.0, user[6])
     except:
         messagebox.showwarning("BBDD", "el campo DNI No puede estar  vacio")
+    finally:
+        connection.close()
+
+
+def update():
+    connection = sqlite3.connect("Users")
+    cursor = connection.cursor()
+    try:
+        dates = dni.get(), name.get(), lastName.get(), direction.get(), commentariesText.get(0.1, END)
+        cursor.execute('''UPDATE USERS SET 
+                       DOCUMENT=?, NAME=?, LAST_NAME=?, DIRECTION=?, DATE_BIRTH=NULL, COMMENTARIES=? 
+                       WHERE ID=''' + idUser.get(), dates)
+        connection.commit()
+        messagebox.showinfo("BBDD", "Registro actualizado con éxito")
+        clean()
+    except:
+        messagebox.showerror("BBDD", "No se pudo actualizar el usuario con DNI: {}".format(dni.get()))
+    finally:
+        connection.close()
+
+
+def delete():
+    connection = sqlite3.connect("Users")
+    cursor = connection.cursor()
+    try:
+        cursor.execute("DELETE FROM USERS WHERE ID=" + idUser.get())
+        connection.commit()
+        messagebox.showinfo("BBDD", "Reistro eliminado con éxito")
+        clean()
+    except:
+        messagebox.showinfo("BBDD", "El resgistro: {} con dni: {}, no se pudo eliminar".format(idUser.get(), dni.get()))
     finally:
         connection.close()
 
@@ -79,7 +110,7 @@ def clean():
     lastName.set("")
     direction.set("")
     dateBirth.set("")
-    commentariesText.delete(0.1, END)
+    commentariesText.delete(1.0, END)
 
 
 def info():
@@ -107,8 +138,8 @@ bbddMenu.add_command(label="Salir", command=close)
 crudMenu = Menu(barrMenu, tearoff=0)
 crudMenu.add_command(label="Crear", command=create)
 crudMenu.add_command(label="Buscar", command=find)
-crudMenu.add_command(label="Actualizar")
-crudMenu.add_command(label="Eliminar")
+crudMenu.add_command(label="Actualizar", command=update)
+crudMenu.add_command(label="Eliminar", command=delete)
 
 # ----- info --------------------------------------------
 
@@ -159,7 +190,7 @@ nameEntry.grid(row=2, column=1, padx=5, pady=10)
 lastNameLabel = Label(miFrame, text="Apellido:")
 lastNameLabel.grid(row=3, column=0, padx=1, pady=10, sticky="e")
 
-lastNameEntry=Entry(miFrame, textvariable=lastName)
+lastNameEntry = Entry(miFrame, textvariable=lastName)
 lastNameEntry.grid(row=3, column=1, padx=5, pady=10)
 
 # --- direction ---
@@ -195,11 +226,11 @@ buttonFind = Button(buttonsFrame, text="Buscar", command=find)
 buttonFind.grid(row=0, column=1, padx=1, pady=10, sticky="e")
 
 # --- buttonActualize ---
-buttonActualize = Button(buttonsFrame, text="Actualizar")
+buttonActualize = Button(buttonsFrame, text="Actualizar", command=update)
 buttonActualize.grid(row=0, column=2, padx=1, pady=10, sticky="e")
 
 # --- buttonRemove ---
-buttonRemove = Button(buttonsFrame, text="Eliminar")
+buttonRemove = Button(buttonsFrame, text="Eliminar", command=delete)
 buttonRemove.grid(row=0, column=3, padx=1, pady=10, sticky="e")
 
 # --------------- execution window ------------------
